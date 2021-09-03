@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload Dialog</title>
+    <script src="scripts/file-upload-dialog.js"></script>
+</head>
+
+<body>
+    <p>
+        <ol>
+            <li>
+                <p>Ensure the source CSV file follows the following conventions&nbsp;:&nbsp;</p>
+                <ul>
+                    <li><strong>WorkItemId</strong> - The Id for the Work item which we will add a new discussion comment to, use semi-colon to specify mulriple.</li>
+                    <li><strong>Title</strong> - The title to be used in the table which we will render for the discussion comment.</li>
+                </ul>
+                <p> Sample CSV File :</p>
+                <img src="images/csv-contents-sample.png" alt="CSV Contents Sample"/>
+            </li>
+            <li>
+                <p>
+                    <label><strong>Select</strong> your CSV file&nbsp;:&nbsp;</label>
+                </p>
+                <p>
+                    <input id="file-input" type="file" name="file-input" accept=".csv"/>
+                </p>
+            </li>
+            <li>
+                <p>
+                    <strong>Click</strong> import below.
+                </p>
+            </li>
+            <li>
+                <p>Once <strong>imported</strong> your CSV Data will be rendered as a table in the work item discussion thread as seen below :</p>
+                <img src="images/discussion-comment.png" alt="Discussion Comment Sample"/>
+            </li>
+        </ol>
+    </p>
+</body>
+</html>

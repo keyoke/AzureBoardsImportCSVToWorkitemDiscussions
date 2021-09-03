@@ -1,0 +1,108 @@
+{
+    "manifestVersion": 1,
+    "id": "import-csv-discussions",
+    "publisher": "soft-cor",
+    "version": "0.0.48",
+    "name": "Import CSV file to work item discussions",
+    "description": "Import CSV file to work item discussions",
+    "public": true,
+    "galleryFlags": [
+        "Preview"
+    ],
+    "categories": ["Azure Boards"],
+    "content": {
+        "details": {
+            "path": "overview.md"
+        },
+        "license": {
+            "path": "LICENSE"
+        }
+    },
+    "links": {
+        "support": {
+            "uri": "https://blog.soft-cor.com"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "uri": "https://github.com/keyoke/AzureBoardsImportCSVToWorkitemDiscussions"
+      },
+     "tags": [
+        "csv",
+        "import",
+        "discussion",
+        "comments"
+    ],
+    "icons": {
+        "default": "logo.png"
+      },
+    "screenshots": [
+        {
+          "path": "images/discussion-comment.png"
+        },
+        {
+          "path": "images/csv-contents-sample.png"
+        }
+      ],
+    "scopes": ["vso.work_write"],
+    "demands": [
+        "api-version/3.0"
+    ],
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "contributions": [
+        {
+            "id": "import-csv-discussions-action",
+            "type": "ms.vss-web.action",
+            "description": "Import CSV file to work item discussions",
+            "targets": [
+                "ms.vss-work-web.work-item-query-menu",
+                "ms.vss-work-web.work-item-query-results-toolbar-menu",
+                "ms.vss-work-web.query-result-work-item-menu",
+                "ms.vss-work-web.work-item-toolbar-menu"
+            ],
+            "properties": {
+                "text": "Import CSV to discussions",
+                "title": "Import CSV to discussions",
+                "icon": "images/icon.png",
+                "groupId": "actions",
+                "uri": "import-csv-discussions-action.html"
+            }
+        },
+        {
+            "id": "file-upload",
+            "type": "ms.vss-web.control",
+            "description": "The content to be displayed in the dialog",
+            "targets": [],
+            "properties": {
+                "uri": "file-upload-dialog.html"
+            }
+        }
+    ],
+    "files": [
+        {
+            "path": "dist",
+            "packagePath": "scripts",
+            "addressable": true
+        },
+        {
+            "path": "images",
+            "addressable": true
+        },
+        {
+            "path": "logo.png",
+            "addressable": true
+        },
+        {
+            "path": "import-csv-discussions-action.html",
+            "addressable": true
+        },
+        {
+            "path": "file-upload-dialog.html",
+            "addressable": true
+        }
+    ]
+}
