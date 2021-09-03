@@ -12,10 +12,20 @@
         <ol>
             <li>
                 <p>Ensure the source CSV file follows the following conventions&nbsp;:&nbsp;</p>
-                <ul>
-                    <li><strong>WorkItemId</strong> - The Id for the Work item which we will add a new discussion comment to, use semi-colon to specify mulriple.</li>
-                    <li><strong>Title</strong> - The title to be used in the table which we will render for the discussion comment.</li>
-                </ul>
+                <p>
+                    <strong>Mandatory fields:</strong>
+                    <ul>
+                        <li><strong>WorkItemId</strong> - The Id for the Work item which we will add a new discussion comment to, use semi-colon to specify multiple ids.</li>
+                        <li><strong>Title</strong> - The title to be used in the table which we will render for the discussion comment.</li>
+                    </ul>
+                </p>
+                <p> 
+                    <strong>File format:</strong>
+                    <ul>
+                        <li>Comma delimited file.</li>
+                        <li>Strings quoted with double quotes.</li>
+                    </ul>
+                </p>
                 <p> Sample CSV File :</p>
                 <img src="images/csv-contents-sample.png" alt="CSV Contents Sample"/>
             </li>
