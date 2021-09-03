@@ -4,7 +4,7 @@
   "description": "Import CSV file to work item discussions",
   "scripts": {
     "build": "webpack",
-    "package": "tfx extension create --manifests vss-extension.json --output-path ./packages/"
+    "package": "npm run build && tfx extension create --manifests vss-extension.json --output-path ./packages/"
   },
   "keywords": [],
   "author": "Gareth Emslie",
