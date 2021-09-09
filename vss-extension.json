@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "import-csv-discussions",
     "publisher": "soft-cor",
-    "version": "0.0.48",
+    "version": "0.0.49",
     "name": "Import CSV file to work item discussions",
     "description": "Import CSV file to work item discussions",
     "public": true,
@@ -27,6 +27,13 @@
         "type": "git",
         "uri": "https://github.com/keyoke/AzureBoardsImportCSVToWorkitemDiscussions"
       },
+    "badges": [
+        {
+            "href": "https://dev.azure.com/softcores/AzureBoardsImportCSVToWorkitemDiscussions/_build?definitionId=6&_a=summary",
+            "uri": "https://dev.azure.com/softcores/AzureBoardsImportCSVToWorkitemDiscussions/_apis/build/status/keyoke.AzureBoardsImportCSVToWorkitemDiscussions?branchName=main",
+            "description": "Azure Pipeline for AzureBoardsImportCSVToWorkitemDiscussions"
+        }
+      ],
      "tags": [
         "csv",
         "import",
