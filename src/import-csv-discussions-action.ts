@@ -99,14 +99,18 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                                 // finally create the comment for each workitem
                                 ids.forEach(async (id : string)=>{
-                                    await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${id.trim()}/comments?api-version=6.0-preview.3`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Authorization': `Bearer ${accessToken}`,
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify( discussion_comment )
-                                    });
+                                    if(id && 
+                                        id.trim() !== '')
+                                    {
+                                        await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${id.trim()}/comments?api-version=6.0-preview.3`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Authorization': `Bearer ${accessToken}`,
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify( discussion_comment )
+                                        });
+                                    }
                                 });
                             });
                         }
