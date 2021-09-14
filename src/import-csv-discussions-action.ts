@@ -73,9 +73,10 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         {
                                             r[clean_id] = r[clean_id] || [];
                                             r[clean_id].push(a);
-                                            return r;
                                         }
                                     });
+                                    
+                                    return r;
                                 }, Object.create(null));
 
                                 console.dir(new_records);
