@@ -64,18 +64,18 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         {
                             try {
                                 let new_records = records.reduce((r, a) => {
+                                    this._logger.debug("a", a);
+
                                     let ids : string[] = a.WorkItemId.split(";");
                                     
+                                    this._logger.debug("ids", ids);
+
                                     ids.forEach(async (id : string)=>{
-                                        let clean_id : string = id.replace(/\D/g,'');
-    
-                                        if(this.isNumber(clean_id))
-                                        {
-                                            r[clean_id] = r[clean_id] || [];
-                                            r[clean_id].push(a);
-                                        }
+                                        this._logger.debug("id", ids);
+                                        r[id] = r[id] || [];
+                                        r[id].push(a);
                                     });
-                                    
+
                                     return r;
                                 }, Object.create(null));
 
