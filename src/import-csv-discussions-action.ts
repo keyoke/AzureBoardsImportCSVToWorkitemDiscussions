@@ -2,6 +2,7 @@ import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
 
 import * as csv from 'csvtojson';
+import Logger, { LogLevel } from "./logger";
 
 
 interface IContributedMenuSource {
@@ -9,6 +10,8 @@ interface IContributedMenuSource {
 }
 
 class ImportCSVDiscussionsAction implements IContributedMenuSource {
+    _logger : Logger = new Logger(LogLevel.All);
+
     constructor()
     {
 
@@ -62,10 +65,12 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                             // for each array item lets create a new comment
                             records.forEach(async (record : any) => {
 
+                                this._logger.debug("record", record);
+
                                 let header : Array<string> = [];
                                 let cols : Array<string> = [];
 
-                                // build ou html table header rows and body rows
+                                // build our html table header rows and body rows
                                 Object.keys(record).forEach(key => {
                                     if(key !== "Title" &&
                                         key !== "WorkItemId")
@@ -74,6 +79,9 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         cols.push(`<td>${record[key]}</td>`);
                                     }
                                 });
+
+                                this._logger.debug("header", header);
+                                this._logger.debug("cols", cols);
 
                                 // put the table together with its title
                                 let discussion_comment = {
@@ -94,22 +102,37 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             </table>`
                                 }
 
+                                this._logger.debug("discussion_comment", discussion_comment);
+
                                 // if multiple ids are specified for this row lets split them
                                 let ids : string[] = record.WorkItemId.split(";");
 
+                                this._logger.debug("ids", ids);
+
                                 // finally create the comment for each workitem
                                 ids.forEach(async (id : string)=>{
-                                    if(id && 
-                                        id.trim() !== '')
+                                    let clean_id : string = id.replace(/\D/g,'');
+
+                                    if(this.isNumber(clean_id))
                                     {
-                                        await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${id.trim()}/comments?api-version=6.0-preview.3`, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Authorization': `Bearer ${accessToken}`,
-                                                'Content-Type': 'application/json',
-                                            },
-                                            body: JSON.stringify( discussion_comment )
-                                        });
+                                        this._logger.debug(`Adding comment for id '${clean_id}'`);
+
+                                        try {
+                                            await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${clean_id}/comments?api-version=6.0-preview.3`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Authorization': `Bearer ${accessToken}`,
+                                                    'Content-Type': 'application/json',
+                                                },
+                                                body: JSON.stringify( discussion_comment )
+                                            });
+                                        } catch (error){
+                                            this._logger.error(`Failed to add comment id '${clean_id}'`, error);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        this._logger.debug(`id is not a number`, id);
                                     }
                                 });
                             });
@@ -118,6 +141,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                     else
                     {
                         alert("Error : CSV File is Empty.")
+                        this._logger.error("Error : CSV File is Empty.");
                     }
                 }
             };
@@ -148,12 +172,25 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
     public execute(actionContext: any)  {
         this.showFileUpload();
     }
+
+    private isNumber(n : any) { 
+        if(n)
+            return !isNaN(parseFloat(n)) && !isNaN(n - 0) 
+        else
+            return false;
+    }
 }
 
+export async function main(): Promise<void> {
+    await SDK.init();
 
-SDK.init();
-SDK.ready().then(() =>{
+    // wait until we are ready
+    await SDK.ready();
+
     SDK.register(SDK.getContributionId(), () => {
         return new ImportCSVDiscussionsAction();
     });
-});
+};
+
+// execute our entrypoint
+main().catch((error) => { console.error(error); });
