@@ -62,6 +62,21 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         // do we have an array?
                         if(records)
                         {
+                            let new_records = records.reduce((r, a) => {
+                                let ids : string[] = a.WorkItemId.split(";");
+                                ids.forEach(async (id : string)=>{
+                                    let clean_id : string = id.replace(/\D/g,'');
+
+                                    if(this.isNumber(clean_id))
+                                    {
+                                        r[clean_id] = r[clean_id] || [];
+                                        r[clean_id].push(a);
+                                    }
+                                });
+                                return r;
+                            }, Object.create(null));
+                            this._logger.debug("new_records", new_records);
+
                             // for each array item lets create a new comment
                             records.forEach(async (record : any) => {
 
