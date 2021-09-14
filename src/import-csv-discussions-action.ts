@@ -65,6 +65,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                             try {
                                 let new_records = records.reduce((r, a) => {
                                     let ids : string[] = a.WorkItemId.split(";");
+                                    
                                     ids.forEach(async (id : string)=>{
                                         let clean_id : string = id.replace(/\D/g,'');
     
@@ -74,9 +75,11 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             r[clean_id].push(a);
                                         }
                                     });
+                                    
                                     return r;
                                 }, Object.create(null));
-                                this._logger.debug("new_records", new_records);
+
+                                console.dir(new_records);
                             } catch (error) {
                                 this._logger.error(error);
                             }
