@@ -1,6 +1,7 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
 import * as pRetry from 'p-retry';
+import * delay from 'delay';
 
 import * as csv from 'csvtojson';
 import Logger, { LogLevel } from "./logger";
@@ -196,7 +197,13 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                                         return response.blob()
                                     });
-                                }, {retries: 5});
+                                }, {
+                                    retries: 3,
+                                    onFailedAttempt: async (error : any) => {
+                                        console.log('Waiting for 1 second before retrying');
+                                        await delay(1000);
+                                    }
+                                });
 
                                 /* // Finally apply the batched updates
                                 if(batch_payload.length > 0)
