@@ -6,7 +6,7 @@ import * as fetchBuilder from 'fetch-retry';
 const options = {
     retries: 5,
     retryDelay: function(attempt : any, error  : any, response  : any) {
-        return Math.pow(2, attempt) * 2000; // 2000, 4000, 6000
+        return Math.pow(2, attempt) * 1000;
     },
     retryOn: [409, 503, 504],
 };
