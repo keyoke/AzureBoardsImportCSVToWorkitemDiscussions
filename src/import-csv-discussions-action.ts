@@ -59,8 +59,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         // do we have an array?
                         if(records)
                         {
-                            let new_records = records.reduce((r, a) => {
-                                let added = false;
+                            let batches = records.reduce((r, a) => {
                                 
                                 // Let's make sure we already have a return array intitialized
                                 if(!r ||
@@ -76,9 +75,13 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                                 // Loop through the supplied ids
                                 ids.forEach(async (id : string)=>{
+                                    let added = false;
+                                    
                                     // ensure we have a number and we need to add seperate records for each id
                                     a.WorkItemId = id.replace(/\D/g,'');
-
+                                    
+                                    this._logger.debug("a", a);
+                                    
                                     // If we already have items in r then lets check if our new item can be placed in one of the existing arrays
                                     r.every((i : any) => {
                                         // Does this item already contain this WorkItemId?
@@ -109,12 +112,14 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 return r;
                             }, Object.create(null));
 
-                            this._logger.debug("new_records", new_records);
+                            console.dir(batches);
 
-                            new_records.forEach(async (group : any) => {
-                                let batch : any = [];
+                            // loop through each batch and apply the update to ADO
+                            batches.forEach(async (batch : any) => {
+                                let batch_payload : any = [];
 
-                                group.forEach(async (record : any) => {
+                                // Loop through each record in this batch and generate the JSON
+                                batch.forEach(async (record : any) => {
                                     this._logger.debug(`Adding comment for id '${record.WorkItemId}'`);
                                     this._logger.debug("record", record);
 
@@ -155,7 +160,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
     
                                     this._logger.debug("discussion_comment", discussion_comment);
 
-                                    batch.push({
+                                    batch_payload.push({
                                                     "method": "PATCH",
                                                     "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
                                                     "headers": {
@@ -170,16 +175,17 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                 });
                                 });
 
-                                if(batch.length > 0)
+                                // Finally apply the batched updates
+                                if(batch_payload.length > 0)
                                 {
                                     try {
-                                        await fetch(`${hostBaseUrl}/_apis/wit/$batch?api-version=4.1`, {
+                                        await fetch(`${hostBaseUrl}_apis/wit/$batch?api-version=4.1`, {
                                             method: 'PATCH',
                                             headers: {
                                                 'Authorization': `Bearer ${accessToken}`,
                                                 'Content-Type': 'application/json',
                                             },
-                                            body: JSON.stringify( batch )
+                                            body: JSON.stringify( batch_payload )
                                         });
                                     } catch (error){
                                         this._logger.error(`Failed to add comments`, error);
