@@ -1,7 +1,7 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
 import * as pRetry from 'p-retry';
-import * delay from 'delay';
+import * as delay from 'delay';
 
 import * as csv from 'csvtojson';
 import Logger, { LogLevel } from "./logger";
