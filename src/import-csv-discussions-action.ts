@@ -184,7 +184,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             method: 'PATCH',
                                             headers: {
                                                 'Authorization': `Bearer ${accessToken}`,
-                                                'Content-Type': 'application/json',
+                                                'Content-Type': 'application/json-patch+json',
                                             },
                                             body: JSON.stringify( batch_payload )
                                         });
