@@ -50,9 +50,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                             '5264459e-e5e0-4bd8-b118-0985e68a4ec5' // WIT
                         );
 
-                        const projectService = await SDK.getService<IProjectPageService>(CommonServiceIds.ProjectPageService);
-                        const project = await projectService.getProject();
-
                         // Get Access Token as we will execute simple rest call
                         const accessToken = await SDK.getAccessToken();
 
@@ -62,101 +59,132 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         // do we have an array?
                         if(records)
                         {
-                            try {
-                                let new_records = records.reduce((r, a) => {
-                                    this._logger.debug("a", a);
-
-                                    let ids : string[] = a.WorkItemId.split(";");
-                                    
-                                    this._logger.debug("ids", ids);
-
-                                    ids.forEach(async (id : string)=>{
-                                        this._logger.debug("id", ids);
-                                        r[id] = r[id] || [];
-                                        r[id].push(a);
-                                    });
-
-                                    return r;
-                                }, Object.create(null));
-
-                                console.dir(new_records);
-                            } catch (error) {
-                                this._logger.error(error);
-                            }
-
-                            // for each array item lets create a new comment
-                            records.forEach(async (record : any) => {
-
-                                this._logger.debug("record", record);
-
-                                let header : Array<string> = [];
-                                let cols : Array<string> = [];
-
-                                // build our html table header rows and body rows
-                                Object.keys(record).forEach(key => {
-                                    if(key !== "Title" &&
-                                        key !== "WorkItemId")
-                                    {
-                                        header.push(`<th>${key}</th>`);
-                                        cols.push(`<td>${record[key]}</td>`);
-                                    }
-                                });
-
-                                this._logger.debug("header", header);
-                                this._logger.debug("cols", cols);
-
-                                // put the table together with its title
-                                let discussion_comment = {
-                                    text : `<table style="width:100%">
-                                                <thead>
-                                                    <tr>
-                                                        <th  colspan="${header.length}">${record.Title}</th>
-                                                    </tr>
-                                                    <tr>
-                                                        ${header.join("\n")}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        ${cols.join("\n")}
-                                                    </tr>
-                                                </tbody>
-                                            </table>`
+                            let new_records = records.reduce((r, a) => {
+                                let added = false;
+                                
+                                // Let's make sure we already have a return array intitialized
+                                if(!r ||
+                                    !Array.isArray(r))
+                                {
+                                    r = [];
                                 }
-
-                                this._logger.debug("discussion_comment", discussion_comment);
-
-                                // if multiple ids are specified for this row lets split them
-                                let ids : string[] = record.WorkItemId.split(";");
-
+                                
+                                // Handle Mutiple id's which a ';' delimited
+                                let ids : string[] = a.WorkItemId.split(";");
+    
                                 this._logger.debug("ids", ids);
 
-                                // finally create the comment for each workitem
+                                // Loop through the supplied ids
                                 ids.forEach(async (id : string)=>{
-                                    let clean_id : string = id.replace(/\D/g,'');
+                                    // ensure we have a number and we need to add seperate records for each id
+                                    a.WorkItemId = id.replace(/\D/g,'');
 
-                                    if(this.isNumber(clean_id))
-                                    {
-                                        this._logger.debug(`Adding comment for id '${clean_id}'`);
-
-                                        try {
-                                            await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${clean_id}/comments?api-version=6.0-preview.3`, {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Authorization': `Bearer ${accessToken}`,
-                                                    'Content-Type': 'application/json',
-                                                },
-                                                body: JSON.stringify( discussion_comment )
-                                            });
-                                        } catch (error){
-                                            this._logger.error(`Failed to add comment id '${clean_id}'`, error);
+                                    // If we already have items in r then lets check if our new item can be placed in one of the existing arrays
+                                    r.every((i : any) => {
+                                        // Does this item already contain this WorkItemId?
+                                        if(i.filter((f : any) => {
+                                                return f.WorkItemId === a.WorkItemId;
+                                            }).length === 0)
+                                        {
+                                            // this id doesnt exist so place it here
+                                            i.push(a);
+                                            added = true;
+                                            // End our search as we have inserted this item into our return array
+                                            return false;
                                         }
-                                    }
-                                    else
+                                        else
+                                        {
+                                            // Look in the next array
+                                            return true;
+                                        }
+                                    });
+                                    
+                                    // Our item was not added to any existing array therefore lets add a new array and add the current item
+                                    if(!added)
                                     {
-                                        this._logger.debug(`id is not a number`, id);
+                                        r.push([a]);
                                     }
                                 });
+                                
+                                return r;
+                            }, Object.create(null));
+
+                            this._logger.debug("new_records", new_records);
+
+                            new_records.forEach(async (group : any) => {
+                                let batch : any = [];
+
+                                group.forEach(async (record : any) => {
+                                    this._logger.debug(`Adding comment for id '${record.WorkItemId}'`);
+                                    this._logger.debug("record", record);
+
+                                    let header : Array<string> = [];
+                                    let cols : Array<string> = [];
+    
+                                    // build our html table header rows and body rows
+                                    Object.keys(record).forEach(key => {
+                                        if(key !== "Title" &&
+                                            key !== "WorkItemId")
+                                        {
+                                            header.push(`<th>${key}</th>`);
+                                            cols.push(`<td>${record[key]}</td>`);
+                                        }
+                                    });
+    
+                                    this._logger.debug("header", header);
+                                    this._logger.debug("cols", cols);
+    
+                                    // put the table together with its title
+                                    let discussion_comment = {
+                                        text : `<table style="width:100%">
+                                                    <thead>
+                                                        <tr>
+                                                            <th  colspan="${header.length}">${record.Title}</th>
+                                                        </tr>
+                                                        <tr>
+                                                            ${header.join("\n")}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            ${cols.join("\n")}
+                                                        </tr>
+                                                    </tbody>
+                                                </table>`
+                                    }
+    
+                                    this._logger.debug("discussion_comment", discussion_comment);
+
+                                    batch.push({
+                                                    "method": "PATCH",
+                                                    "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
+                                                    "headers": {
+                                                        "Content-Type": "application/json-patch+json"
+                                                    },
+                                                    "body": [{
+                                                        "op": "add",
+                                                        "path": "/fields/System.History",
+                                                        "value": `${discussion_comment}`
+                                                        }
+                                                    ]
+                                                });
+                                });
+
+                                if(batch.length > 0)
+                                {
+                                    try {
+                                        await fetch(`${hostBaseUrl}/_apis/wit/$batch?api-version=4.1`, {
+                                            method: 'PATCH',
+                                            headers: {
+                                                'Authorization': `Bearer ${accessToken}`,
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify( batch )
+                                        });
+                                    } catch (error){
+                                        this._logger.error(`Failed to add comments`, error);
+                                    }
+                                }
                             });
                         }
                     }
