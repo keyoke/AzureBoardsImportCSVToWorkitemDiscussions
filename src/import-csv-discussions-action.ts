@@ -4,7 +4,7 @@ import * as originalFetch from 'isomorphic-fetch';
 import * as fetchBuilder from 'fetch-retry';
 
 const options = {
-    retries: 3,
+    retries: 5,
     retryDelay: 2000,
     retryOn: [409, 503, 504],
 };
@@ -20,7 +20,7 @@ interface IContributedMenuSource {
 }
 
 class ImportCSVDiscussionsAction implements IContributedMenuSource {
-    _logger : Logger = new Logger(LogLevel.All);
+    _logger : Logger = new Logger(LogLevel.Info);
 
     constructor()
     {
