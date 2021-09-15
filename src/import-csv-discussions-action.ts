@@ -58,10 +58,12 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                     // Get the file contents
                     return fileUploadForm ? await fileUploadForm.getFileContents() : "";
                 },
-                okCallback: async (result : string) => {                 
+                okCallback: async (result : string) => {
                     // do we have some data
                     if(result)
                     {
+                        this._logger.info(`Started Import.`);
+
                         // Get the HOST URI
                         const service : ILocationService = await SDK.getService(CommonServiceIds.LocationService);
                         const hostBaseUrl = await service.getResourceAreaLocation(
@@ -80,6 +82,8 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         // do we have an array?
                         if(records)
                         {
+                            this._logger.info(`'${records.length}' records to import.`);
+
                             let batches = records.reduce((r, a) => {
                                 
                                 // Let's make sure we already have a return array intitialized
@@ -142,7 +146,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                                 // Loop through each record in this batch and generate the JSON
                                 batch.forEach(async (record : any) => {
-                                    this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
                                     this._logger.debug("record", record);
 
                                     let header : Array<string> = [];
@@ -196,6 +199,8 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                     ]
                                                 }); */
                                     try {
+                                        this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
+
                                         // Make sure we retry
                                         let response = await this._fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
                                             method: 'POST',
@@ -208,7 +213,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     }
                                     catch(error)
                                     {
-                                        this._logger.info(`Error adding comment for id '${record.WorkItemId}'`);
+                                        this._logger.info(`Failed to add comment for id '${record.WorkItemId}'`);
                                         this._logger.error(error);
                                     }
                                 });
@@ -231,6 +236,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 } */
                             });
                         }
+                        this._logger.info(`Ended Import.`);
                     }
                     else
                     {
