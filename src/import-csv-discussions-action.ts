@@ -1,7 +1,15 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
-import * as pRetry from 'p-retry';
-import * as delay from 'delay';
+import * as originalFetch from 'isomorphic-fetch';
+import * as fetchBuilder from 'fetch-retry';
+
+const options = {
+    retries: 3,
+    retryDelay: 2000,
+    retryOn: [409, 503, 504],
+};
+
+const fetch = fetchBuilder(originalFetch, options);
 
 import * as csv from 'csvtojson';
 import Logger, { LogLevel } from "./logger";
@@ -118,7 +126,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 return r;
                             }, Object.create(null));
 
-                            console.dir(batches);
+                            this._logger.debug("batches", batches);
 
                             // loop through each batch and apply the update to ADO
                             batches.forEach(async (batch : any) => {
@@ -181,29 +189,13 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                 }); */
 
                                     // Make sure we retry
-                                    await pRetry(async ()=>{
-                                        let response = await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Authorization': `Bearer ${accessToken}`,
-                                                'Content-Type': 'application/json',
-                                            },
-                                            body: JSON.stringify( discussion_comment )
-                                        });
-                                        // Abort retrying if the resource doesn't exist
-                                        if (response.status === 404) {
-                                            throw new pRetry.AbortError(response.statusText)
-                                        }
-
-                                        return response.blob()
-                                    }, 
-                                    {
-                                        retries: 3,
-                                        onFailedAttempt: async (error : any) => {
-                                            this._logger.error('onFailedAttempt', error);
-                                            this._logger.info('Waiting for 2 seconds before retrying');
-                                            await delay(2000);
-                                        }
+                                    let response = await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Authorization': `Bearer ${accessToken}`,
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify( discussion_comment )
                                     });
                                 });
 
