@@ -201,7 +201,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         retries: 3,
                                         onFailedAttempt: async (error : any) => {
                                             this._logger.error('onFailedAttempt', error);
-                                            this._logger.info('Waiting for 1 second before retrying');
+                                            this._logger.info('Waiting for 2 seconds before retrying');
                                             await delay(2000);
                                         }
                                     });
