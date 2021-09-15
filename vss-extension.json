@@ -51,7 +51,7 @@
           "path": "images/csv-contents-sample.png"
         }
       ],
-    "scopes": ["vso.work_full"],
+    "scopes": ["vso.work_write"],
     "demands": [
         "api-version/3.0"
     ],

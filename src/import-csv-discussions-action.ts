@@ -1,5 +1,6 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
+import * as pRetry from 'p-retry';
 
 import * as csv from 'csvtojson';
 import Logger, { LogLevel } from "./logger";
@@ -49,6 +50,9 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         const hostBaseUrl = await service.getResourceAreaLocation(
                             '5264459e-e5e0-4bd8-b118-0985e68a4ec5' // WIT
                         );
+
+                        const projectService = await SDK.getService<IProjectPageService>(CommonServiceIds.ProjectPageService);
+                        const project = await projectService.getProject();
 
                         // Get Access Token as we will execute simple rest call
                         const accessToken = await SDK.getAccessToken();
@@ -117,7 +121,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                             // loop through each batch and apply the update to ADO
                             batches.forEach(async (batch : any) => {
-                                let batch_payload : any = [];
+                                // let batch_payload : any = [];
 
                                 // Loop through each record in this batch and generate the JSON
                                 batch.forEach(async (record : any) => {
@@ -161,7 +165,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
     
                                     this._logger.debug("discussion_comment", discussion_comment);
 
-                                    batch_payload.push({
+                                    /* batch_payload.push({
                                                     "method": "PATCH",
                                                     "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
                                                     "headers": {
@@ -173,10 +177,28 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                         "value": `${discussion_comment}`
                                                         }
                                                     ]
-                                                });
-                                });
+                                                }); */
 
-                                // Finally apply the batched updates
+                                    // Make sure we retry
+                                    await pRetry(async ()=>{
+                                        let response = await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Authorization': `Bearer ${accessToken}`,
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify( discussion_comment )
+                                        });
+                                        // Abort retrying if the resource doesn't exist
+                                        if (response.status === 404) {
+                                            throw new pRetry.AbortError(response.statusText)
+                                        }
+
+                                        return response.blob()
+                                    });
+                                }, {retries: 5});
+
+                                /* // Finally apply the batched updates
                                 if(batch_payload.length > 0)
                                 {
                                     try {
@@ -191,7 +213,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     } catch (error){
                                         this._logger.error(`Failed to add comments`, error);
                                     }
-                                }
+                                } */
                             });
                         }
                     }
