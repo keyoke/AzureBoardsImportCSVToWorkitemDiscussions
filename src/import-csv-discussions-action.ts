@@ -74,23 +74,24 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 this._logger.debug("ids", ids);
 
                                 // Loop through the supplied ids
-                                ids.forEach(async (id : string)=>{
+                                ids.forEach((id : string)=>{
                                     let added = false;
-                                    
+
                                     // ensure we have a number and we need to add seperate records for each id
-                                    a.WorkItemId = id.replace(/\D/g,'');
-                                    
-                                    this._logger.debug("a", a);
+                                    let n = Object.assign({}, a);
+                                    n.WorkItemId = id.replace(/\D/g,'');
+
+                                    this._logger.debug("n", n);
                                     
                                     // If we already have items in r then lets check if our new item can be placed in one of the existing arrays
                                     r.every((i : any) => {
                                         // Does this item already contain this WorkItemId?
                                         if(i.filter((f : any) => {
-                                                return f.WorkItemId === a.WorkItemId;
+                                                return f.WorkItemId === n.WorkItemId;
                                             }).length === 0)
                                         {
                                             // this id doesnt exist so place it here
-                                            i.push(a);
+                                            i.push(n);
                                             added = true;
                                             // End our search as we have inserted this item into our return array
                                             return false;
@@ -105,7 +106,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     // Our item was not added to any existing array therefore lets add a new array and add the current item
                                     if(!added)
                                     {
-                                        r.push([a]);
+                                        r.push([n]);
                                     }
                                 });
                                 
@@ -120,7 +121,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                                 // Loop through each record in this batch and generate the JSON
                                 batch.forEach(async (record : any) => {
-                                    this._logger.debug(`Adding comment for id '${record.WorkItemId}'`);
+                                    this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
                                     this._logger.debug("record", record);
 
                                     let header : Array<string> = [];
