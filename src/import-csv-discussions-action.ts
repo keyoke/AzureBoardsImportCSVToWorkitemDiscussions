@@ -196,13 +196,15 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         }
 
                                         return response.blob()
+                                    }, 
+                                    {
+                                        retries: 3,
+                                        onFailedAttempt: async (error : any) => {
+                                            this._logger.error('onFailedAttempt', error);
+                                            this._logger.info('Waiting for 2 seconds before retrying');
+                                            await delay(2000);
+                                        }
                                     });
-                                }, {
-                                    retries: 3,
-                                    onFailedAttempt: async (error : any) => {
-                                        console.log('Waiting for 1 second before retrying');
-                                        await delay(1000);
-                                    }
                                 });
 
                                 /* // Finally apply the batched updates
