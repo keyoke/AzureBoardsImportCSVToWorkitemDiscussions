@@ -1,21 +1,9 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
-import * as originalFetch from 'isomorphic-fetch';
-import * as fetchBuilder from 'fetch-retry';
-
-const options = {
-    retries: 5,
-    retryDelay: function(attempt : any, error  : any, response  : any) {
-        return Math.pow(2, attempt) * 1000;
-    },
-    retryOn: [409, 503, 504],
-};
-
-const fetch = fetchBuilder(originalFetch, options);
-
 import * as csv from 'csvtojson';
 import Logger, { LogLevel } from "./logger";
-
+import * as originalFetch from 'isomorphic-fetch';
+import * as fetchBuilder from 'fetch-retry';
 
 interface IContributedMenuSource {
     execute?(actionContext: any) : any;
@@ -23,6 +11,24 @@ interface IContributedMenuSource {
 
 class ImportCSVDiscussionsAction implements IContributedMenuSource {
     _logger : Logger = new Logger(LogLevel.Info);
+
+    _statusCodes = [409, 503, 504];
+    _options = {
+        retries: 5,
+        retryDelay: (attempt : any, error  : any, response  : any) => {
+            return Math.pow(2, attempt) * 1000;
+        },
+        retryOn: (attempt  : any, error  : any, response  : any)  => {
+            // retry on any network error, or specific status codes
+            if (error !== null || this._statusCodes.includes(response.status)) {
+                this._logger.info(`retrying, attempt number ${attempt + 1}`);
+                return true;
+            }
+        }
+    };
+
+    _fetch : any = fetchBuilder(originalFetch, this._options);
+
 
     constructor()
     {
@@ -189,16 +195,22 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                         }
                                                     ]
                                                 }); */
-
-                                    // Make sure we retry
-                                    let response = await fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Authorization': `Bearer ${accessToken}`,
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify( discussion_comment )
-                                    });
+                                    try {
+                                        // Make sure we retry
+                                        let response = await this._fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Authorization': `Bearer ${accessToken}`,
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify( discussion_comment )
+                                        });
+                                    }
+                                    catch(error)
+                                    {
+                                        this._logger.info(`Error adding comment for id '${record.WorkItemId}'`);
+                                        this._logger.error(error);
+                                    }
                                 });
 
                                 /* // Finally apply the batched updates
