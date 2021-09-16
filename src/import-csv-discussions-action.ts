@@ -211,10 +211,15 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     this._logger.info(`Ended Import.`);
                                 });
                             }
+                            else
+                            {
+                                alert("Unable to parse CSV file contents.")
+                                this._logger.error("Unable to parse CSV file contents."); 
+                            }
                         }
                         else {
-                            alert("Error : CSV File is Empty.")
-                            this._logger.error("Error : CSV File is Empty.");
+                            alert("CSV File is Empty.")
+                            this._logger.error("CSV File is Empty.");
                         }
                     }
                 };
