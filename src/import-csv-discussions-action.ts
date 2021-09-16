@@ -145,6 +145,21 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     // Loop through each record in this batch and generate the JSON
                                     batch.forEach(async (record: any) => {
                                         this._logger.debug("record", record);
+                                        
+                                        /* batch_payload.push({
+                                                        "method": "PATCH",
+                                                        "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
+                                                        "headers": {
+                                                            "Content-Type": "application/json-patch+json"
+                                                        },
+                                                        "body": [{
+                                                            "op": "add",
+                                                            "path": "/fields/System.History",
+                                                            "value": `${discussion_comment}`
+                                                            }
+                                                        ]
+                                                    }); */
+
                                         promises.push(this.createComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, record));
                                     });
 
@@ -167,7 +182,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 });
 
                                 // wait for promises
-                                Promise.all(promises).then(()=>{
+                                await Promise.all(promises.map(p => p.catch(e => e))).then(()=>{
                                     this._logger.info(`'${this._failures.length}' records failed to import.`);
 
                                     if (this._failures.length > 0) {
@@ -266,20 +281,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
             }
 
             this._logger.debug("discussion_comment", discussion_comment);
-
-            /* batch_payload.push({
-                            "method": "PATCH",
-                            "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
-                            "headers": {
-                                "Content-Type": "application/json-patch+json"
-                            },
-                            "body": [{
-                                "op": "add",
-                                "path": "/fields/System.History",
-                                "value": `${discussion_comment}`
-                                }
-                            ]
-                        }); */
 
             this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
 
