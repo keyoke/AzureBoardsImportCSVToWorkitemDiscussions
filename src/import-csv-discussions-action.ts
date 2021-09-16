@@ -224,7 +224,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             this._logger.debug("response", response);
 
                                             // Save this failure for later
-                                            failures.push(record);
+                                            failures.push(Object.assign({}, record));
                                         }
 
                                     }
@@ -234,14 +234,14 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         this._logger.error(error);
 
                                         // Save this failure for later
-                                        failures.push(record);
+                                        failures.push(Object.assign({}, record));
                                     }
                                 });
 
+                                this._logger.info(`'${failures.length}' records failed to import.`);
+                                
                                 if(failures.length > 0)
                                 {
-                                    this._logger.info(`'${failures.length}' records failed to import.`);
-
                                     try {
                                         // convert our array of failed imports back into csv format
                                         const csv = this._json2csvParser.parse(failures);
