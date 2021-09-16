@@ -202,7 +202,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             a.download = "import-failed.csv";
                                             a.href = `data:text/plain;base64,${base64}`;
                                             a.click();
-    
                                         } catch (error) {
                                             this._logger.error(error);
                                         }
