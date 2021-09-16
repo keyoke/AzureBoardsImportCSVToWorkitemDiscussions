@@ -1,6 +1,7 @@
 import * as SDK from "azure-devops-extension-sdk";
 import { CommonServiceIds, ILocationService, IProjectPageService } from "azure-devops-extension-api";
 import * as csv from 'csvtojson';
+import { Parser } from 'json2csv';
 import Logger, { LogLevel } from "./logger";
 import * as originalFetch from 'isomorphic-fetch';
 import * as fetchBuilder from 'fetch-retry';
@@ -28,6 +29,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
     };
 
     _fetch : any = fetchBuilder(originalFetch, this._options);
+    _json2csvParser = new Parser();
 
 
     constructor()
@@ -78,6 +80,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                         // convert our csv data to json array
                         const records = await csv().fromString(result);
+                        let failures : any = [];
 
                         // do we have an array?
                         if(records)
@@ -215,8 +218,35 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     {
                                         this._logger.info(`Failed to add comment for id '${record.WorkItemId}'`);
                                         this._logger.error(error);
+                                        failures.pop(record);
                                     }
                                 });
+
+                                if(failures.length > 0)
+                                {
+                                    try {
+                                        this._logger.info(`'${failures.length}' records failed to import.`);
+
+                                        // convert our array of failed imports back into csv format
+                                        const csv = this._json2csvParser.parse(failures);
+    
+                                        // create a buffer for our csv string
+                                        const buff = Buffer.from(csv, 'utf-8');
+    
+                                        // decode buffer as Base64
+                                        const base64 = buff.toString('base64');
+    
+                                        // Attempt to send our file containing failures back to the user
+                                        let a : HTMLAnchorElement = document.createElement('a');
+                                        document.body.appendChild(a);
+                                        a.download = "import-failed.csv";
+                                        a.href = `data:text/plain;base64,${base64}`;
+                                        a.click();
+                                        
+                                    } catch (error) {
+                                        this._logger.error(error);
+                                    }
+                                }
 
                                 /* // Finally apply the batched updates
                                 if(batch_payload.length > 0)
