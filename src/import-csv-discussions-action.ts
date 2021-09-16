@@ -30,6 +30,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
     _fetch: any = fetchBuilder(originalFetch, this._options);
     _json2csvParser = new Parser();
+    _failures: any[] = [];
 
 
     constructor() {
@@ -78,11 +79,12 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                             // convert our csv data to json array
                             const records: any[] = await csv().fromString(result);
-                            let failures: any[] = [];
 
                             // do we have an array?
                             if (records) {
                                 this._logger.info(`'${records.length}' records to import.`);
+
+                                let promises : Promise<boolean>[] = [];
 
                                 let batches = records.reduce((r, a) => {
 
@@ -143,19 +145,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     // Loop through each record in this batch and generate the JSON
                                     batch.forEach(async (record: any) => {
                                         this._logger.debug("record", record);
-                                        try {
-                                            if(!await this.createComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, record))
-                                            {
-                                                this._logger.info(`Failed to add comment.`, record);
-                                                // Save this failure for later
-                                                failures.push(Object.assign({}, record));
-                                            }
-                                        }
-                                        catch (error) {
-                                            this._logger.info(`Failed to add comment.`, record, error);
-                                            // Save this failure for later
-                                            failures.push(Object.assign({}, record));
-                                        }
+                                        promises.push(this.createComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, record));
                                     });
 
                                     /* // Finally apply the batched updates
@@ -175,34 +165,37 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         }
                                     } */
                                 });
+
+                                // wait for promises
+                                Promise.all(promises).then(()=>{
+                                    this._logger.info(`'${this._failures.length}' records failed to import.`);
+
+                                    if (this._failures.length > 0) {
+                                        try {
+                                            // convert our array of failed imports back into csv format
+                                            const csv = this._json2csvParser.parse(this._failures);
+    
+                                            // create a buffer for our csv string
+                                            const buff = Buffer.from(csv, 'utf-8');
+    
+                                            // decode buffer as Base64
+                                            const base64 = buff.toString('base64');
+    
+                                            // Attempt to send our file containing failures back to the user
+                                            let a: HTMLAnchorElement = document.createElement('a');
+                                            document.body.appendChild(a);
+                                            a.download = "import-failed.csv";
+                                            a.href = `data:text/plain;base64,${base64}`;
+                                            a.click();
+    
+                                        } catch (error) {
+                                            this._logger.error(error);
+                                        }
+                                    }
+    
+                                    this._logger.info(`Ended Import.`);
+                                });
                             }
-
-                            this._logger.info(`'${failures.length}' records failed to import.`);
-
-                            if (failures.length > 0) {
-                                try {
-                                    // convert our array of failed imports back into csv format
-                                    const csv = this._json2csvParser.parse(failures);
-
-                                    // create a buffer for our csv string
-                                    const buff = Buffer.from(csv, 'utf-8');
-
-                                    // decode buffer as Base64
-                                    const base64 = buff.toString('base64');
-
-                                    // Attempt to send our file containing failures back to the user
-                                    let a: HTMLAnchorElement = document.createElement('a');
-                                    document.body.appendChild(a);
-                                    a.download = "import-failed.csv";
-                                    a.href = `data:text/plain;base64,${base64}`;
-                                    a.click();
-
-                                } catch (error) {
-                                    this._logger.error(error);
-                                }
-                            }
-
-                            this._logger.info(`Ended Import.`);
                         }
                         else {
                             alert("Error : CSV File is Empty.")
@@ -236,6 +229,8 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
     async createComment(url: string, accessToken: string, record: any): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
+            this._failures =[];
+
             let header: Array<string> = [];
             let cols: Array<string> = [];
 
@@ -303,9 +298,12 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                     resolve(true);
                 }
                 else {
+                    this._failures.push(Object.assign({}, record));
                     resolve(false);
                 }
             }).catch((error: Error) => {
+                // Save this failure for later
+                this._failures.push(Object.assign({}, record));
                 reject(error);
             });
 
