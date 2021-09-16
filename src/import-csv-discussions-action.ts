@@ -204,10 +204,10 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                                     'Content-Type': 'application/json',
                                                 },
                                                 body: JSON.stringify(discussion_comment)
-                                            }).then((response: Response) => {
+                                            }).then(async (response: Response) => {
                                                 if (response.status >= 200 && response.status < 300) {
                                                     this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
-                                                    return response.json()
+                                                    return await response.json()
                                                 }
                                                 else {
                                                     this._logger.info(`Failed to add comment, response status '${response.status}'`, record);
