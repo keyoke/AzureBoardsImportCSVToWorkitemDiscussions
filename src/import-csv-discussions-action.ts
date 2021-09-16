@@ -202,7 +202,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             a.download = "import-failed.csv";
                                             a.href = `data:text/plain;base64,${base64}`;
                                             a.click();
-    
                                         } catch (error) {
                                             this._logger.error(error);
                                         }
@@ -299,21 +298,22 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
             }).then(async (response: Response) => {
                 if (response.status >= 200 && response.status < 300) {
                     let json: string = await response.json();
+                    this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
                     // log any JSON to debug
                     this._logger.debug("json", json);
                     resolve(true);
                 }
                 else {
+                    this._logger.info(`Failed adding comment for id '${record.WorkItemId}'`);
                     this._failures.push(Object.assign({}, record));
                     resolve(false);
                 }
             }).catch((error: Error) => {
                 // Save this failure for later
+                this._logger.error(`Unhandled Error.`, error);
                 this._failures.push(Object.assign({}, record));
                 reject(error);
             });
-
-            this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
         });
     };
 
