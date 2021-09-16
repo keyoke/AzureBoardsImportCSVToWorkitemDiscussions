@@ -205,7 +205,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
 
                                         // Make sure we retry
-                                        let response = await this._fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
+                                        let response : Response = await this._fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
                                             method: 'POST',
                                             headers: {
                                                 'Authorization': `Bearer ${accessToken}`,
@@ -213,6 +213,18 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                             },
                                             body: JSON.stringify( discussion_comment )
                                         });
+
+                                        if(response.status >= 200 && response.status < 300)
+                                        {
+                                            this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
+                                        }
+                                        else
+                                        {
+                                            this._logger.info(`Failed to add comment for id '${record.WorkItemId}', Http Response Status '${response.status}'`);
+                                            this._logger.debug("response", response);
+                                            failures.pop(record);
+                                        }
+
                                     }
                                     catch(error)
                                     {
@@ -242,7 +254,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         a.download = "import-failed.csv";
                                         a.href = `data:text/plain;base64,${base64}`;
                                         a.click();
-                                        
+
                                     } catch (error) {
                                         this._logger.error(error);
                                     }
