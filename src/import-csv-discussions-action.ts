@@ -80,7 +80,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
                         // convert our csv data to json array
                         const records : any[] = await csv().fromString(result);
-                        let failures : any[] = [];
+                        let failures : Array<any> = [];
 
                         // do we have an array?
                         if(records)
@@ -220,7 +220,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         }
                                         else
                                         {
-                                            this._logger.info(`Failed to add comment for id '${record.WorkItemId}', Http Response Status '${response.status}'`);
+                                            this._logger.info(`Failed to add comment for id '${record.WorkItemId}', status '${response.status}'`);
                                             this._logger.debug("response", response);
 
                                             // Save this failure for later
@@ -237,32 +237,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         failures.push(Object.assign({}, record));
                                     }
                                 });
-
-                                this._logger.info(`'${failures.length}' records failed to import.`);
-                                
-                                if(failures.length > 0)
-                                {
-                                    try {
-                                        // convert our array of failed imports back into csv format
-                                        const csv = this._json2csvParser.parse(failures);
-    
-                                        // create a buffer for our csv string
-                                        const buff = Buffer.from(csv, 'utf-8');
-    
-                                        // decode buffer as Base64
-                                        const base64 = buff.toString('base64');
-    
-                                        // Attempt to send our file containing failures back to the user
-                                        let a : HTMLAnchorElement = document.createElement('a');
-                                        document.body.appendChild(a);
-                                        a.download = "import-failed.csv";
-                                        a.href = `data:text/plain;base64,${base64}`;
-                                        a.click();
-
-                                    } catch (error) {
-                                        this._logger.error(error);
-                                    }
-                                }
 
                                 /* // Finally apply the batched updates
                                 if(batch_payload.length > 0)
@@ -282,6 +256,33 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                 } */
                             });
                         }
+
+                        this._logger.info(`'${failures.length}' records failed to import.`);
+                                
+                        if(failures.length > 0)
+                        {
+                            try {
+                                // convert our array of failed imports back into csv format
+                                const csv = this._json2csvParser.parse(failures);
+
+                                // create a buffer for our csv string
+                                const buff = Buffer.from(csv, 'utf-8');
+
+                                // decode buffer as Base64
+                                const base64 = buff.toString('base64');
+
+                                // Attempt to send our file containing failures back to the user
+                                let a : HTMLAnchorElement = document.createElement('a');
+                                document.body.appendChild(a);
+                                a.download = "import-failed.csv";
+                                a.href = `data:text/plain;base64,${base64}`;
+                                a.click();
+
+                            } catch (error) {
+                                this._logger.error(error);
+                            }
+                        }
+
                         this._logger.info(`Ended Import.`);
                     }
                     else
