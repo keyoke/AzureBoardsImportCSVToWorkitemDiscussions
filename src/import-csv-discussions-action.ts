@@ -143,69 +143,16 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     // Loop through each record in this batch and generate the JSON
                                     batch.forEach(async (record: any) => {
                                         this._logger.debug("record", record);
-
-                                        let header: Array<string> = [];
-                                        let cols: Array<string> = [];
-
-                                        // build our html table header rows and body rows
-                                        Object.keys(record).forEach(key => {
-                                            if (key !== "Title" &&
-                                                key !== "WorkItemId") {
-                                                header.push(`<th>${key}</th>`);
-                                                cols.push(`<td>${record[key]}</td>`);
-                                            }
-                                        });
-
-                                        this._logger.debug("header", header);
-                                        this._logger.debug("cols", cols);
-
-                                        // put the table together with its title
-                                        let discussion_comment = {
-                                            text: `<table style="width:100%">
-                                                    <thead>
-                                                        <tr>
-                                                            <th  colspan="${header.length}">${record.Title}</th>
-                                                        </tr>
-                                                        <tr>
-                                                            ${header.join("\n")}
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            ${cols.join("\n")}
-                                                        </tr>
-                                                    </tbody>
-                                                </table>`
-                                        }
-
-                                        this._logger.debug("discussion_comment", discussion_comment);
-
-                                        /* batch_payload.push({
-                                                        "method": "PATCH",
-                                                        "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
-                                                        "headers": {
-                                                            "Content-Type": "application/json-patch+json"
-                                                        },
-                                                        "body": [{
-                                                            "op": "add",
-                                                            "path": "/fields/System.History",
-                                                            "value": `${discussion_comment}`
-                                                            }
-                                                        ]
-                                                    }); */
                                         try {
-                                            this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
-
-                                            let json = await this.postComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, JSON.stringify(discussion_comment));
-
-                                            this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
-
-                                            // log any JSON to debug
-                                            this._logger.debug("json", json);
+                                            if(!await this.createComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, record))
+                                            {
+                                                this._logger.info(`Failed to add comment.`, record);
+                                                // Save this failure for later
+                                                failures.push(Object.assign({}, record));
+                                            }
                                         }
                                         catch (error) {
                                             this._logger.info(`Failed to add comment.`, record, error);
-
                                             // Save this failure for later
                                             failures.push(Object.assign({}, record));
                                         }
@@ -287,16 +234,83 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
             });
     }
 
-    async postComment(url: string, accessToken: string, body: string) : Promise<any> {
-        let response: Response = await this._fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: body
+    async createComment(url: string, accessToken: string, record: any): Promise<boolean> {
+        return new Promise(async (resolve, reject) => {
+            let header: Array<string> = [];
+            let cols: Array<string> = [];
+
+            // build our html table header rows and body rows
+            Object.keys(record).forEach(key => {
+                if (key !== "Title" &&
+                    key !== "WorkItemId") {
+                    header.push(`<th>${key}</th>`);
+                    cols.push(`<td>${record[key]}</td>`);
+                }
+            });
+
+            this._logger.debug("header", header);
+            this._logger.debug("cols", cols);
+
+            // put the table together with its title
+            let discussion_comment = {
+                text: `<table style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th  colspan="${header.length}">${record.Title}</th>
+                                </tr>
+                                <tr>
+                                    ${header.join("\n")}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    ${cols.join("\n")}
+                                </tr>
+                            </tbody>
+                        </table>`
+            }
+
+            this._logger.debug("discussion_comment", discussion_comment);
+
+            /* batch_payload.push({
+                            "method": "PATCH",
+                            "uri": `/_apis/wit/workitems/${record.WorkItemId}?api-version=4.1`,
+                            "headers": {
+                                "Content-Type": "application/json-patch+json"
+                            },
+                            "body": [{
+                                "op": "add",
+                                "path": "/fields/System.History",
+                                "value": `${discussion_comment}`
+                                }
+                            ]
+                        }); */
+
+            this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
+
+            let response: Response = await this._fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(discussion_comment)
+            }).then(async (response: Response) => {
+                if (response.status >= 200 && response.status < 300) {
+                    let json: string = await response.json();
+                    // log any JSON to debug
+                    this._logger.debug("json", json);
+                    resolve(true);
+                }
+                else {
+                    resolve(false);
+                }
+            }).catch((error: Error) => {
+                reject(error);
+            });
+
+            this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
         });
-        return await response.json();
     };
 
     public execute(actionContext: any) {
