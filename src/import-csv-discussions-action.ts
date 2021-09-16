@@ -196,34 +196,15 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         try {
                                             this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
 
-                                            // Make sure we retry
-                                            const json : string = await this._fetch(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Authorization': `Bearer ${accessToken}`,
-                                                    'Content-Type': 'application/json',
-                                                },
-                                                body: JSON.stringify(discussion_comment)
-                                            }).then(async (response: Response) => {
-                                                if (response.status >= 200 && response.status < 300) {
-                                                    this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
-                                                    return await response.json()
-                                                }
-                                                else {
-                                                    this._logger.info(`Failed to add comment, response status '${response.status}'`, record);
-                                                    // Save this failure for later
-                                                    failures.push(Object.assign({}, record));
-                                                    return "";
-                                                }
-                                            });
+                                            let json = await this.postComment(`${hostBaseUrl}${project.name}/_apis/wit/workItems/${record.WorkItemId}/comments?api-version=6.0-preview.3`, accessToken, JSON.stringify(discussion_comment));
+
+                                            this._logger.info(`Successfully added comment for id '${record.WorkItemId}'`);
 
                                             // log any JSON to debug
                                             this._logger.debug("json", json);
-
                                         }
                                         catch (error) {
-                                            this._logger.info(`Failed to add comment with unhandled error.`, record);
-                                            this._logger.error(error);
+                                            this._logger.info(`Failed to add comment.`, record, error);
 
                                             // Save this failure for later
                                             failures.push(Object.assign({}, record));
@@ -305,6 +286,29 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                     });
             });
     }
+
+    async postComment(url : string, accessToken : string, body : string) : Promise<string> {
+        return new Promise(async (resolve, reject)=>{
+            let response : Response = await this._fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: body
+            }).then(async (response : Response)=>{
+                if (response.status >= 200 && response.status < 300) {
+                    let json : string = await response.json();
+                    resolve(json);
+                }
+                else {
+                    reject(`Unsuccessful response with status '${response.status}'`);
+                }
+            }).catch((error : Error)=>{
+                reject(error);
+            });
+        });
+    };
 
     public execute(actionContext: any) {
         this.showFileUpload();
