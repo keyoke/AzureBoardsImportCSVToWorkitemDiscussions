@@ -79,8 +79,8 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         const accessToken = await SDK.getAccessToken();
 
                         // convert our csv data to json array
-                        const records = await csv().fromString(result);
-                        let failures : any = [];
+                        const records : any[] = await csv().fromString(result);
+                        let failures : any[] = [];
 
                         // do we have an array?
                         if(records)
@@ -222,7 +222,9 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                         {
                                             this._logger.info(`Failed to add comment for id '${record.WorkItemId}', Http Response Status '${response.status}'`);
                                             this._logger.debug("response", response);
-                                            failures.pop(record);
+
+                                            // Save this failure for later
+                                            failures.push(record);
                                         }
 
                                     }
@@ -230,15 +232,17 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                                     {
                                         this._logger.info(`Failed to add comment for id '${record.WorkItemId}'`);
                                         this._logger.error(error);
-                                        failures.pop(record);
+
+                                        // Save this failure for later
+                                        failures.push(record);
                                     }
                                 });
 
                                 if(failures.length > 0)
                                 {
-                                    try {
-                                        this._logger.info(`'${failures.length}' records failed to import.`);
+                                    this._logger.info(`'${failures.length}' records failed to import.`);
 
+                                    try {
                                         // convert our array of failed imports back into csv format
                                         const csv = this._json2csvParser.parse(failures);
     
