@@ -61,6 +61,9 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
                         return fileUploadForm ? await fileUploadForm.getFileContents() : "";
                     },
                     okCallback: async (result: string) => {
+                        // clear any existing failures 
+                        this._failures = [];
+                        
                         // do we have some data
                         if (result) {
                             this._logger.info(`Started Import.`);
@@ -248,8 +251,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
     async createComment(url: string, accessToken: string, record: any): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
-            this._failures =[];
-
             let header: Array<string> = [];
             let cols: Array<string> = [];
 
