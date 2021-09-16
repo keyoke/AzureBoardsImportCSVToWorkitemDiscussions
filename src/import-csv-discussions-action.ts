@@ -287,27 +287,16 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
             });
     }
 
-    async postComment(url : string, accessToken : string, body : string) : Promise<string> {
-        return new Promise(async (resolve, reject)=>{
-            let response : Response = await this._fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: body
-            }).then(async (response : Response)=>{
-                if (response.status >= 200 && response.status < 300) {
-                    let json : string = await response.json();
-                    resolve(json);
-                }
-                else {
-                    reject(`Unsuccessful response with status '${response.status}'`);
-                }
-            }).catch((error : Error)=>{
-                reject(error);
-            });
+    async postComment(url: string, accessToken: string, body: string) : Promise<any> {
+        let response: Response = await this._fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: body
         });
+        return await response.json();
     };
 
     public execute(actionContext: any) {
