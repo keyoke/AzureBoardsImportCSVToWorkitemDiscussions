@@ -38,11 +38,17 @@ module.exports = {
   },
   resolve: {
     extensions: [ '.html', '.ts', '.js' ],
+    fallback: {
+      "buffer": require.resolve("buffer/")
+    }
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
   },
   plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+  })
 	]
 };
