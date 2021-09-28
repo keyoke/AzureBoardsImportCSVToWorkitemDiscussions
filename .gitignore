@@ -113,3 +113,6 @@ dist
 
 # Dist Folder
 dist/
+
+# ignore lint cache
+.eslintcache
