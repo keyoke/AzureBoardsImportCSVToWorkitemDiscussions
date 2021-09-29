@@ -36,8 +36,6 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
   _json2csvParser = new Parser();
   _failures: any[] = [];
 
-  constructor() {}
-
   public showFileUpload() {
     SDK.getService('ms.vss-web.dialog-service').then(
       async (dialogService: any) => {
@@ -270,7 +268,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
     accessToken: string,
     record: any
   ): Promise<boolean> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const header: Array<string> = [];
       const cols: Array<string> = [];
 
@@ -310,7 +308,7 @@ class ImportCSVDiscussionsAction implements IContributedMenuSource {
 
       this._logger.info(`Adding comment for id '${record.WorkItemId}'`);
 
-      const response: Response = await this._fetch(url, {
+      this._fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
