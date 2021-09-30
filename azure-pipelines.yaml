@@ -1,5 +1,8 @@
 trigger:
-- main
+  batch: true
+  branches:
+    include:
+    - main
 pr:
   - main
 variables:
